@@ -22,7 +22,7 @@ Remember those classic split-flap displays at airports? The ones that would *cli
 
 ## 🚀 Live Demo
 
-[View the live flipboard →]([https://yourusername.github.io/flipboard-display](https://evanmarie.github.io/airport-click-clack-screen/))
+[View the live flipboard →]([https://yourusername.github.io/flipboard-display](https://evanmarie.github.io/airport-click-clack-screen/)
 
 ## 🛠️ How It Works
 
