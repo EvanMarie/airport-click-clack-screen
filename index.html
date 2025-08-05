@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -24,6 +25,46 @@
             justify-content: center;
             padding-bottom: 5vh;
             overflow: hidden;
+        }
+
+        .title-panel {
+            position: fixed;
+            top: 2vh;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            z-index: 10;
+            background-color: rgba(23, 29, 41, 0.9);
+            padding: 2vh 4vh;
+            border-radius: 2vh;
+            border: 2px solid rgba(0, 255, 255, 0.3);
+            backdrop-filter: blur(10px);
+            font-family: 'Quicksand', sans-serif;
+        }
+
+        .title-panel h1 {
+            font-size: 3vh;
+            font-weight: bold;
+            color: cyan;
+            margin-bottom: 0.5vh;
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+        }
+
+        .title-panel h2 {
+            font-size: 2vh;
+            color: #f0f0f0;
+            margin-bottom: 0.5vh;
+        }
+
+        .title-panel a {
+            font-size: 1.8vh;
+            color: #888;
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .title-panel a:hover {
+            color: cyan;
         }
 
         .flipboard-container {
@@ -71,13 +112,23 @@
         }
 
         @keyframes flipOut {
-            0% { transform: rotateX(0deg); }
-            100% { transform: rotateX(-90deg); }
+            0% {
+                transform: rotateX(0deg);
+            }
+
+            100% {
+                transform: rotateX(-90deg);
+            }
         }
 
         @keyframes flipIn {
-            0% { transform: rotateX(90deg); }
-            100% { transform: rotateX(0deg); }
+            0% {
+                transform: rotateX(90deg);
+            }
+
+            100% {
+                transform: rotateX(0deg);
+            }
         }
 
         .navigation {
@@ -119,29 +170,54 @@
         }
 
         @media (max-width: 768px) {
+            .title-panel {
+                top: 1vh;
+                padding: 1.5vh 3vh;
+            }
+
+            .title-panel h1 {
+                font-size: 2.5vh;
+            }
+
+            .title-panel h2 {
+                font-size: 1.8vh;
+            }
+
+            .title-panel a {
+                font-size: 1.5vh;
+            }
+
             .flipboard-container {
                 font-size: 2vh;
             }
-            
+
             .flip-character {
                 width: 3vh;
                 height: 4vh;
             }
-            
+
             .navigation {
                 bottom: 1rem;
             }
-            
-            .nav-button, .counter {
+
+            .nav-button,
+            .counter {
                 padding: 0.5rem 1rem;
                 font-size: 0.9rem;
             }
         }
     </style>
 </head>
+
 <body>
+    <div class="title-panel">
+        <h1>Airport Clickity-Clackity Inspiration Board</h1>
+        <h2>by Evan Marie Carr</h2>
+        <a href="https://github.com/EvanMarie" target="_blank">https://github.com/EvanMarie</a>
+    </div>
+
     <div id="flipboard" class="flipboard-container"></div>
-    
+
     <div class="navigation">
         <button id="prevBtn" class="nav-button">← Previous</button>
         <div id="counter" class="counter">1 / 16</div>
@@ -156,32 +232,32 @@
                 this.boardHeight = options.boardHeight || 10;
                 this.flipDuration = options.flipDuration || 0.4;
                 this.enableTextWrapping = options.enableTextWrapping !== false;
-                
+
                 this.characterGrid = [];
                 this.prevCharacterGrid = [];
                 this.flipElements = [];
-                
+
                 this.setupGrid();
             }
 
             setupGrid() {
                 this.container.style.gridTemplateColumns = `repeat(${this.boardWidth}, 1fr)`;
                 this.container.style.gridTemplateRows = `repeat(${this.boardHeight}, 1fr)`;
-                
+
                 // Create flip elements
                 for (let y = 0; y < this.boardHeight; y++) {
                     this.flipElements[y] = [];
                     for (let x = 0; x < this.boardWidth; x++) {
                         const flipChar = document.createElement('div');
                         flipChar.className = 'flip-character';
-                        
+
                         const staticCard = document.createElement('div');
                         staticCard.className = 'character-card';
                         staticCard.textContent = ' ';
-                        
+
                         flipChar.appendChild(staticCard);
                         this.container.appendChild(flipChar);
-                        
+
                         this.flipElements[y][x] = {
                             container: flipChar,
                             staticCard: staticCard
@@ -402,4 +478,5 @@
         updateCounter();
     </script>
 </body>
+
 </html>
