@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flipboard Display</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            width: 100vw;
+            height: 100vh;
+            background-color: #1d2436;
+            font-family: 'Roboto Mono', monospace;
+            color: #f0f0f0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding-bottom: 5vh;
+            overflow: hidden;
+        }
+
+        .flipboard-container {
+            display: grid;
+            gap: 0.3vh;
+            width: 100%;
+            height: 100%;
+            font-size: 3vh;
+            max-width: 90vw;
+            max-height: 60vh;
+        }
+
+        .flip-character {
+            position: relative;
+            width: 4vh;
+            height: 5vh;
+            perspective: 300px;
+        }
+
+        .character-card {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #171d29;
+            color: cyan;
+            backface-visibility: hidden;
+            border-radius: 0.7vh;
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .character-card.flipping-out {
+            animation: flipOut var(--flip-duration, 0.4s) ease-in-out forwards;
+            animation-delay: var(--flip-delay, 0s);
+        }
+
+        .character-card.flipping-in {
+            animation: flipIn var(--flip-duration, 0.4s) ease-out forwards;
+            animation-delay: var(--flip-delay-in, 0.2s);
+            transform: rotateX(90deg);
+        }
+
+        @keyframes flipOut {
+            0% { transform: rotateX(0deg); }
+            100% { transform: rotateX(-90deg); }
+        }
+
+        @keyframes flipIn {
+            0% { transform: rotateX(90deg); }
+            100% { transform: rotateX(0deg); }
+        }
+
+        .navigation {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 1rem;
+            z-index: 10;
+        }
+
+        .nav-button {
+            padding: 0.75rem 1.5rem;
+            background-color: #171d29;
+            color: cyan;
+            border: 2px solid cyan;
+            border-radius: 1.5rem;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        .nav-button:hover {
+            background-color: cyan;
+            color: #171d29;
+        }
+
+        .counter {
+            padding: 0.75rem 1.5rem;
+            background-color: #171d29;
+            color: cyan;
+            border-radius: 1.5rem;
+            font-size: 1rem;
+            font-weight: bold;
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        @media (max-width: 768px) {
+            .flipboard-container {
+                font-size: 2vh;
+            }
+            
+            .flip-character {
+                width: 3vh;
+                height: 4vh;
+            }
+            
+            .navigation {
+                bottom: 1rem;
+            }
+            
+            .nav-button, .counter {
+                padding: 0.5rem 1rem;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="flipboard" class="flipboard-container"></div>
+    
+    <div class="navigation">
+        <button id="prevBtn" class="nav-button">← Previous</button>
+        <div id="counter" class="counter">1 / 16</div>
+        <button id="nextBtn" class="nav-button">Next →</button>
+    </div>
+
+    <script>
+        class FlipboardDisplay {
+            constructor(containerId, options = {}) {
+                this.container = document.getElementById(containerId);
+                this.boardWidth = options.boardWidth || 20;
+                this.boardHeight = options.boardHeight || 10;
+                this.flipDuration = options.flipDuration || 0.4;
+                this.enableTextWrapping = options.enableTextWrapping !== false;
+                
+                this.characterGrid = [];
+                this.prevCharacterGrid = [];
+                this.flipElements = [];
+                
+                this.setupGrid();
+            }
+
+            setupGrid() {
+                this.container.style.gridTemplateColumns = `repeat(${this.boardWidth}, 1fr)`;
+                this.container.style.gridTemplateRows = `repeat(${this.boardHeight}, 1fr)`;
+                
+                // Create flip elements
+                for (let y = 0; y < this.boardHeight; y++) {
+                    this.flipElements[y] = [];
+                    for (let x = 0; x < this.boardWidth; x++) {
+                        const flipChar = document.createElement('div');
+                        flipChar.className = 'flip-character';
+                        
+                        const staticCard = document.createElement('div');
+                        staticCard.className = 'character-card';
+                        staticCard.textContent = ' ';
+                        
+                        flipChar.appendChild(staticCard);
+                        this.container.appendChild(flipChar);
+                        
+                        this.flipElements[y][x] = {
+                            container: flipChar,
+                            staticCard: staticCard
+                        };
+                    }
+                }
+            }
+
+            wrapText(text, maxWidth) {
+                const lines = [];
+                const paragraphs = text.split('\n');
+
+                for (const paragraph of paragraphs) {
+                    if (paragraph.trim() === '') {
+                        lines.push('');
+                        continue;
+                    }
+
+                    const words = paragraph.split(' ');
+                    let currentLine = '';
+
+                    for (let i = 0; i < words.length; i++) {
+                        const word = words[i];
+
+                        if (word.length > maxWidth) {
+                            if (currentLine.trim()) {
+                                lines.push(currentLine.trim());
+                                currentLine = '';
+                            }
+                            for (let j = 0; j < word.length; j += maxWidth) {
+                                lines.push(word.slice(j, j + maxWidth));
+                            }
+                            continue;
+                        }
+
+                        const potentialLine = currentLine + (currentLine ? ' ' : '') + word;
+                        if (potentialLine.length <= maxWidth) {
+                            currentLine = potentialLine;
+                        } else {
+                            if (currentLine.trim()) {
+                                lines.push(currentLine.trim());
+                            }
+                            currentLine = word;
+                        }
+                    }
+
+                    if (currentLine.trim()) {
+                        lines.push(currentLine.trim());
+                    }
+                }
+
+                return lines.slice(0, this.boardHeight);
+            }
+
+            getStaggeredDelay(x, y) {
+                const distance = Math.sqrt(x * x + y * y);
+                return distance * 0.05;
+            }
+
+            updateText(text) {
+                this.prevCharacterGrid = this.characterGrid.map(row => [...row]);
+
+                let lines;
+                if (this.enableTextWrapping) {
+                    lines = this.wrapText(text, this.boardWidth);
+                } else {
+                    lines = text.split('\n');
+                }
+
+                const grid = [];
+                for (let y = 0; y < this.boardHeight; y++) {
+                    grid[y] = Array(this.boardWidth).fill(' ');
+                    if (y < lines.length) {
+                        const line = lines[y];
+                        for (let x = 0; x < Math.min(line.length, this.boardWidth); x++) {
+                            grid[y][x] = line[x];
+                        }
+                    }
+                }
+
+                this.characterGrid = grid;
+                this.animateChanges();
+            }
+
+            animateChanges() {
+                for (let y = 0; y < this.boardHeight; y++) {
+                    for (let x = 0; x < this.boardWidth; x++) {
+                        const newChar = this.characterGrid[y][x] || ' ';
+                        const oldChar = this.prevCharacterGrid[y]?.[x] || ' ';
+                        const element = this.flipElements[y][x];
+
+                        if (newChar !== oldChar && !(newChar === ' ' && oldChar === ' ')) {
+                            this.flipCharacter(element, oldChar, newChar, x, y);
+                        } else {
+                            element.staticCard.textContent = newChar;
+                        }
+                    }
+                }
+            }
+
+            flipCharacter(element, oldChar, newChar, x, y) {
+                const delay = this.getStaggeredDelay(x, y);
+                const randomizedDuration = this.flipDuration * (0.8 + Math.random() * 0.4);
+                const randomizedDelay = delay + Math.random() * 0.2;
+
+                // Clear existing animations
+                const existingCards = element.container.querySelectorAll('.character-card.flipping-out, .character-card.flipping-in');
+                existingCards.forEach(card => {
+                    if (card !== element.staticCard) {
+                        card.remove();
+                    }
+                });
+
+                // Create flipping out card (old character)
+                const flipOutCard = document.createElement('div');
+                flipOutCard.className = 'character-card flipping-out';
+                flipOutCard.textContent = oldChar;
+                flipOutCard.style.setProperty('--flip-duration', `${randomizedDuration / 2}s`);
+                flipOutCard.style.setProperty('--flip-delay', `${randomizedDelay}s`);
+                element.container.appendChild(flipOutCard);
+
+                // Create flipping in card (new character)
+                const flipInCard = document.createElement('div');
+                flipInCard.className = 'character-card flipping-in';
+                flipInCard.textContent = newChar;
+                flipInCard.style.setProperty('--flip-duration', `${randomizedDuration / 2}s`);
+                flipInCard.style.setProperty('--flip-delay-in', `${randomizedDelay + randomizedDuration / 2}s`);
+                element.container.appendChild(flipInCard);
+
+                // Update static card and clean up after animation
+                setTimeout(() => {
+                    element.staticCard.textContent = newChar;
+                    flipOutCard.remove();
+                    flipInCard.remove();
+                }, (randomizedDelay + randomizedDuration) * 1000 + 100);
+            }
+        }
+
+        // Initialize the flipboard
+        const flipboard = new FlipboardDisplay('flipboard', {
+            boardWidth: 20,
+            boardHeight: 10,
+            flipDuration: 0.4,
+            enableTextWrapping: true
+        });
+
+        // Content array
+        const contents = [
+            `"Protection and power are overrated. I think you are very wise to choose happiness and love."
+~Uncle Iroh`,
+            `"This is the real secret of life—to be completely engaged with what you are doing in the here and now. And instead of calling it work, realize it is play."
+~Alan Watts`,
+            `"Happiness is not something ready made. It comes from your own actions."
+~Dalai Lama`,
+            `"Do not dwell in the past, do not dream of the future, concentrate the mind on the present moment."
+~Buddha`,
+            `"The best way to take care of the future is to take care of the present moment."
+~Thich Nhat Hanh`,
+            `"You only lose what you cling to."
+~Buddha`,
+            `"Simplicity, patience, compassion. These three are your greatest treasures. Simple in actions and thoughts, you return to the source of being."
+~Lao Tsu`,
+            `"Be content with what you have; rejoice in the way things are. When you realize there is nothing lacking, the whole world belongs to you."
+~Lao Tsu`,
+            `"Nature does not hurry, yet everything is accomplished."
+~Lao Tsu`,
+            `"The journey of a thousand miles begins with a single step."
+~Lao Tsu`,
+            `"At the center of your being, you have the answer; you know who you are and you know what you want."
+~Lao Tsu`,
+            `"Happiness is a perfume you cannot pour on others without getting some on yourself."
+~Ralph Waldo Emerson`,
+            `"The greatest happiness of life is the conviction that we are loved — loved for ourselves, or rather, loved in spite of ourselves."
+~Victor Hugo`,
+            `"The most precious gift we can offer others is our presence. When mindfulness embraces those we love, they will bloom like flowers."
+~Thich Nhat Hanh`,
+            `"Life is a series of natural and spontaneous changes. Don't resist them; that only creates sorrow. Let things flow naturally forward in whatever way they like."
+~Lao Tsu`,
+            `"Wherever you go, there you are."
+~Jon Kabat-Zinn`
+        ];
+
+        let currentIndex = 0;
+
+        function updateCounter() {
+            document.getElementById('counter').textContent = `${currentIndex + 1} / ${contents.length}`;
+        }
+
+        function showNext() {
+            currentIndex = (currentIndex + 1) % contents.length;
+            flipboard.updateText(contents[currentIndex]);
+            updateCounter();
+        }
+
+        function showPrevious() {
+            currentIndex = currentIndex === 0 ? contents.length - 1 : currentIndex - 1;
+            flipboard.updateText(contents[currentIndex]);
+            updateCounter();
+        }
+
+        // Event listeners
+        document.getElementById('nextBtn').addEventListener('click', showNext);
+        document.getElementById('prevBtn').addEventListener('click', showPrevious);
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                e.preventDefault();
+                showNext();
+            } else if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                showPrevious();
+            }
+        });
+
+        // Initialize with first content
+        flipboard.updateText(contents[currentIndex]);
+        updateCounter();
+    </script>
+</body>
+</html>
