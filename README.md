@@ -22,7 +22,7 @@ Remember those classic split-flap displays at airports? The ones that would *cli
 
 ## 🚀 Live Demo
 
-[View the live flipboard →](https://yourusername.github.io/flipboard-display)
+[View the live flipboard →]([https://yourusername.github.io/flipboard-display](https://evanmarie.github.io/airport-click-clack-screen/))
 
 ## 🛠️ How It Works
 
@@ -80,8 +80,7 @@ The aesthetic draws inspiration from:
 flipboard-display/
 ├── index.html          # Complete standalone flipboard
 ├── README.md           # This file
-└── original/
-    └── react-version.tsx  # Original React implementation
+└── react-version.tsx  # Original React implementation
 ```
 
 ## 🚀 Quick Start
